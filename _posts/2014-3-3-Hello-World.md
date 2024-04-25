@@ -1,10 +1,129 @@
 ---
 layout: post
-title: You're up and running!
+title: Docker 3 Tier Architecture Tutorial!
+
 ---
 
-Next you can update your site name, avatar and other options using the _config.yml file in the root of your repository (shown below).
+Hyy my name is shrey and this is my blog post on docker 3 tier architecture
 
-![_config.yml]({{ site.baseurl }}/images/config.png)
 
-The easiest way to make your first post is to edit this one. Go into /_posts/ and update the Hello World markdown file. For more instructions head over to the [Jekyll Now repository](https://github.com/barryclark/jekyll-now) on GitHub.
+
+0. **Setting Up the Full Stack Project**
+
+   To deploy a Three-Tier Application using Docker, the initial step involves setting up a Full Stack Project. While any Full Stack Project can be utilized for this purpose, if one isn't available, an alternative project can be employed. In this instance, a straightforward project hosted on GitLab is utilized. The project, accessible via the link [developing-with-docker](https://gitlab.com/nanuchi/developing-with-docker), is constructed using HTML, CSS, JavaScript, Express, and MongoDB.
+
+   To commence, clone the Project Repository using the following command:
+
+   `git clone https://gitlab.com/nanuchi/developing-with-docker`
+
+   ![_config.yml]({{ site.baseurl }}/images/1.png)
+
+
+
+1. **Creating a Network for Docker Containers**
+
+   To run a Three Tier Application, we need to run three Docker Containers simultaneously. So, it is necessary to run all these containers inside a network to avoid their interaction with other containers.
+
+   So, Network can be created by using the following command after starting the Docker Engine with name mongo-network:
+
+   ```bash
+   docker network create mongo-network
+   ```
+   ![_config.yml]({{ site.baseurl }}/images/2.png)
+
+
+2. **Pulling and Running MongoDB Image**
+
+   To pull the MongoDB image from DockerHub and run it as a container, execute the following command:
+   ``` bash 
+   docker run -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=password --network=mongo-network --name=21cp306-mongodb -d mongo
+   ```
+
+   ![_config.yml]({{ site.baseurl }}/images/3.png)
+
+   Here, the `mongo` image will be automatically pulled from DockerHub to run the container in detachable mode with the name `21bcp306-mongodb` in the network `mongo-network`. The container will be running on the default port `27017`. You can check all the running containers using the command `docker ps`. Environment variables such as Username and Password are also passed to run the container. Similarly, we will be creating another container for Express by pulling its image from DockerHub.
+
+3. **Running Express Container**
+
+   The Express Container can be run using the following command:
+   ``` bash 
+   docker run -p 8081:8081 -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin -e ME_CONFIG_MONGODB_ADMINPASSWORD=password -e ME_CONFIG_MONGODB_SERVER=21bcp306-mongodb --network=mongo-network --name=21bcp306-express -d mongo-express
+   ```
+
+   ![_config.yml]({{ site.baseurl }}/images/4.png)
+
+   
+   Here, the container with the name `21bcp306-express` is configured to connect the MongoDB Database with the Frontend of the project in Docker. The container will run on port `8081`. Environment variables such as Username and Password of the MongoDB are passed to access the Database, along with the container name of the MongoDB in the Server Environment variable. The container will be running on the same network as the previous container.
+
+4. **Accessing the Frontend and Creating Databases**
+
+   Next, open the following link in your browser: `localhost:8081`, login using `admin` and `password`/`pass` and proceed to create two databases named `myDB` and `userDB`.
+
+   ![_config.yml]({{ site.baseurl }}/images/5.png)
+
+   ![_config.yml]({{ site.baseurl }}/images/6.png)
+
+   It's essential to create these two databases as they will be required by the Frontend during runtime. Additionally, make sure to update the MongoDB URL specified in the `server.js` file, as MongoDB will be running using Docker instead of on the Local Machine.
+
+5. **Updating MongoDB URLs in the `server.js` File**
+
+   Navigate to the `server.js` file within the project directory. Replace the values of `mongoUrlLocal` and `mongoUrlDocker` with the following MongoDB URL:
+
+   ![_config.yml]({{ site.baseurl }}/images/7.png)
+
+   This step ensures that the server connects to the MongoDB database correctly. It replaces the previous URLs with the Docker-specific URL, allowing seamless integration with the MongoDB container running in Docker.
+
+
+6. **Updating the Dockerfile**
+
+   Next, delete the existing Dockerfile provided in the project. Then, create a new Dockerfile inside the `app` folder of the project using the following commands:
+
+   ```Dockerfile
+   FROM node
+   WORKDIR /app
+   COPY . .
+   ENV MONGO_DB_USERNAME=admin
+   ENV MONGO_DB_PWD=password
+   RUN npm install
+   EXPOSE 3000
+   CMD ["node", "server.js"]
+   ```
+
+   ![_config.yml]({{ site.baseurl }}/images/8.png)
+
+7. **Building and Running the Docker Image**
+
+   Open the Command Prompt (CMD) terminal inside the `app` folder of the project. Then, run the following command:
+
+   ```bash
+   docker build -t 21bcp306-project .
+   ```
+   ![_config.yml]({{ site.baseurl }}/images/9.png)
+
+   The execution of the above command will generate a Docker Image with name 21bcp306-project and it will take some time for it. After the Image is created we need to Run it as a Docker Container.
+
+8. **Running the Docker Image as a Container**
+
+   To run the Docker Image as a Docker Container, execute the following command:
+
+   ```bash
+   docker run -d -p 3000:3000 --network=mongo-network --name=21bcp306-project 21bcp306-project
+   ```
+
+   ![_config.yml]({{ site.baseurl }}/images/10.png)
+
+9. **Accessing the Webpage**
+
+   Now, open the following link in your web browser: [localhost:3000](http://localhost:3000). You will be able to view the running webpage.
+
+   ![_config.yml]({{ site.baseurl }}/images/11.png)
+
+10. **Pushing to docker**
+
+   Finally, push the code to your docker, replace `chinmaypandya` with your username. 
+   Voila !
+   
+   ![_config.yml]({{ site.baseurl }}/images/12.png)
+   
+
+Congratulations! You have successfully deployed a Three-Tier Application using Docker. Feel free to explore further and customize your project. Happy coding!
